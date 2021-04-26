@@ -1,0 +1,10 @@
+node_modules
+config.json
+permission.json
+npm-debug.log
+*~
+
+Dockerfile
+.dockerignore
+.git
+.gitignore

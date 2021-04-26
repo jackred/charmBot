@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  discord_bot:
+    container_name: charmBot
+    build: .
+    volumes:
+      - ./config.json:/usr/src/charmBot/config.json
+    restart: always
+
+networks:
+  default:
+    external:
+      name: ng_network
