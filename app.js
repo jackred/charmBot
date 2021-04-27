@@ -138,7 +138,7 @@ async function findCharm(msg, arg) {
 
 function checkSequence(arg) {
   let args = arg.split('|');
-  if (args.length !== 1) {
+  if (args.length > 1 && args.length < 20) {
     let i = 0;
     let res = true;
     while (i < args.length && res) {
@@ -150,7 +150,7 @@ function checkSequence(arg) {
     }
     return res;
   } else {
-    return 'The sequence should have at least 2 charms. To check only one, use `!charm`';
+    return 'The sequence should have at least 2 charms and less than 20. To check only one, use `!charm`';
   }
 }
 
