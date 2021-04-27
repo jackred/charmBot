@@ -10,6 +10,9 @@ const client = new Discord.Client({
   // partials: ['MESSAGE', 'CHANNEL', 'REACTION', 'USER'],
 });
 
+let userLast = {};
+let userCount = {};
+
 client.on('ready', async () => {
   console.log('Starting!');
   client.user.setActivity(config.activity);
@@ -177,6 +180,22 @@ async function findSequence(msg, arg) {
   }
 }
 
+function limitUser(id) {
+  if (id in userCount) {
+    userCount[id] += 1;
+  } else {
+    userCount[id] = 1;
+  }
+  userLast[id] = Date.now();
+}
+
+function userCan(id) {
+  let rateLimitOk = userCount[id] === undefined || userCount[id] < 5;
+  let timeLimitOk =
+    userLast[id] === undefined || Date.now() - userLast[id] > 5000;
+  return timeLimitOk && rateLimitOk;
+}
+
 client.on('message', async (msg) => {
   if (msg.author.bot) {
     return;
@@ -185,13 +204,27 @@ client.on('message', async (msg) => {
     const content = msg.content.substr(config.prefix.length);
     switch (content.split(' ')[0]) {
       case 'charm': {
-        const arg = cleanStr(content.substr('charm'.length));
-        await findCharm(msg, arg);
+        if (userCan(msg.author.id)) {
+          limitUser(msg.author.id);
+          const arg = cleanStr(content.substr('charm'.length));
+          await findCharm(msg, arg);
+        } else {
+          await msg.channel.send(
+            `Too many requests. ${msg.member.displayName} you are being limited for the time being. Retry later.`
+          );
+        }
         break;
       }
       case 'sequence': {
-        const arg = cleanStr(content.substr('sequence'.length));
-        await findSequence(msg, arg);
+        if (userCan(msg.author.id)) {
+          limitUser(msg.author.id);
+          const arg = cleanStr(content.substr('sequence'.length));
+          await findSequence(msg, arg);
+        } else {
+          await msg.channel.send(
+            `Too many requests. ${msg.member.displayName} you are being limited for the time being. Retry later.`
+          );
+        }
         break;
       }
       default:
@@ -199,6 +232,10 @@ client.on('message', async (msg) => {
     }
   }
 });
+
+setInterval(function () {
+  userCount = {};
+}, 60 * 1000);
 
 client
   .login(config.token)
