@@ -32,7 +32,29 @@ async function findCharm(msg, arg) {
     const data = { charm: talents, slot: slot };
     console.log(data);
     const res = await axios.post(`${config.url}/charm`, data);
-    await msg.channel.send(res.data);
+    let text = '';
+    switch (res.data.found) {
+      case 0:
+      case 1: {
+        text = 'This charm was not found in any of the mystery tables.';
+        break;
+      }
+      // case 1: {
+      //   let s = res.data.tables.length == 1 ? '' : 's';
+      //   text =
+      //     'This charm with the those slots was not found in any of the mystery tables.\n' +
+      //     `However it was found with different slots in the following table${s} (check for slot mistakes):\n`;
+      //   text += res.data.tables.map((d) => `**${d}**`).join('\n');
+      //   break;
+      // }
+      case 2: {
+        let s = res.data.tables.length == 1 ? '' : 's';
+        text = `This charm was found in the following table${s}:\n`;
+        text += res.data.tables.map((d) => `**${d}**`).join('\n');
+        break;
+      }
+    }
+    await msg.channel.send(text);
   } else {
     await msg.channel.send(resCheck);
   }
@@ -47,11 +69,22 @@ function checkSequence(arg) {
 async function findSequence(msg, arg) {
   let resCheck = checkSequence(arg);
   if (resCheck === true) {
-    const talents = arg.replace(/;/g, '|');
+    const talents = arg.replace(/;|,/g, '|');
     const data = { charm: talents };
     console.log(data);
     const res = await axios.post(`${config.url}/sequence`, data);
-    await msg.channel.send(res.data);
+    let text = '';
+    if (res.data.match.length > 0) {
+      let s = res.data.match.length == 1 ? '' : 's';
+      text = `A subsequence of charm was found in the following table${s}.`;
+      for (let i = 0; i < res.data.match.length; i++) {
+        let s = res.data.match[i] == 1 ? '' : 's';
+        text += `\n**${res.data.name[i]}** has a subsequence of ${res.data.match[i]} charm${s} in common with the sequence you provided.`;
+      }
+    } else {
+      text = 'This sequence of charm was not found in any mystery tables.';
+    }
+    await msg.channel.send(text);
   } else {
     await msg.channel.send(resCheck);
   }
