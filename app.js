@@ -4,6 +4,8 @@ const axios = require('axios');
 
 const config = require('./config.json');
 
+const listTalents = require('./talents.json');
+
 const client = new Discord.Client({
   // partials: ['MESSAGE', 'CHANNEL', 'REACTION', 'USER'],
 });
@@ -17,8 +19,79 @@ function cleanStr(s) {
   return s.trim().replace(/\s\s+/g, ' ');
 }
 
+function checkTalents(arg) {
+  let r = /[^\d]+\d/g;
+  let talents = arg.match(r);
+  if (talents !== null) {
+    talents = talents.map((d) => cleanStr(d));
+    if (talents.length <= 2) {
+      let tmp = arg;
+      for (let i of talents) {
+        tmp = tmp.replace(i, '');
+      }
+      if (cleanStr(tmp) === '') {
+        let i = 0;
+        let res = true;
+        while (i < talents.length && res === true) {
+          let idx = talents[i].lastIndexOf(' ');
+          let value = talents[i].substr(idx + 1);
+          if (
+            /^\d$/.test(value) &&
+            parseInt(value) > 0 &&
+            parseInt(value) <= 4
+          ) {
+            let talent = talents[i].substr(0, idx);
+            if (!listTalents.includes(talent.toLowerCase())) {
+              res = `Talent ${talent} is not a skill. Check it's syntax`;
+            }
+          } else {
+            res = 'Talent point should be a number between 1 and 4.';
+          }
+          i++;
+        }
+        return res;
+      } else {
+        return 'Talents should be written as `Talent name X`, X being a number.';
+      }
+    } else {
+      return 'The maximum number of talents is 2.';
+    }
+  } else {
+    return 'Talents badly written. Missing skill or point.';
+  }
+}
+
+const validSlots = [
+  '',
+  '1',
+  '2',
+  '3',
+  '1-1',
+  '1-1-1',
+  '2-1',
+  '2-1-1',
+  '2-2',
+  '2-2-1',
+  '3-1',
+  '3-1-1',
+  '3-2',
+  '3-2-1',
+];
 function checkCharm(arg) {
-  return true;
+  arg = arg.split(';');
+  if (arg.length <= 2) {
+    let slot = arg[1] || '';
+    if (validSlots.includes(slot)) {
+      return checkTalents(arg[0]);
+    } else {
+      return `List of valid slot: ${validSlots.slice(1).join(', ')}`;
+    }
+  } else {
+    return (
+      'You need to provide only one charm, with its slot\n' +
+      'e.g: `Ice Attack 2 Thunder Attack 1;3-1`'
+    );
+  }
 }
 
 // arg should be like
@@ -27,7 +100,7 @@ async function findCharm(msg, arg) {
   let resCheck = checkCharm(arg);
   if (resCheck === true) {
     const args = arg.split(';');
-    const slot = args[1];
+    const slot = args[1] || '';
     const talents = args[0];
     const data = { charm: talents, slot: slot };
     console.log(data);
@@ -61,16 +134,30 @@ async function findCharm(msg, arg) {
 }
 
 function checkSequence(arg) {
-  return true;
+  let args = arg.split('|');
+  if (args.length !== 1) {
+    let i = 0;
+    let res = true;
+    while (i < args.length && res) {
+      let resCheck = checkTalents(args[i]);
+      if (resCheck !== true) {
+        res = resCheck;
+      }
+      i++;
+    }
+    return res;
+  } else {
+    return 'The sequence should have at least 2 charms. To check only one, use `!charm`';
+  }
 }
 
 // arg should be like
 // Talent1 point Talent2 point; Talent1 point Talent2 point;...
 async function findSequence(msg, arg) {
+  arg = arg.replace(/;|,/g, '|');
   let resCheck = checkSequence(arg);
   if (resCheck === true) {
-    const talents = arg.replace(/;|,/g, '|');
-    const data = { charm: talents };
+    const data = { charm: arg };
     console.log(data);
     const res = await axios.post(`${config.url}/sequence`, data);
     let text = '';
