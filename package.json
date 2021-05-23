@@ -29,6 +29,8 @@
   },
   "dependencies": {
     "axios": "*",
-    "discord.js": "*"
+    "discord.js": "*",
+    "mongodb": "*",
+    "mongoose": "*"
   }
 }
