@@ -26,7 +26,7 @@ client.on('ready', async () => {
   } while (msgs.size > 0);
 });
 
-async function addAuthorOrUrl(msg) {
+async function addAuthorOrUrl(msg, vidMsgId) {
   if ((await db.findUserByDiscordID(msg.author.id)) !== null) {
     await db.updatePushOneUrl(
       msg.author.id,
@@ -38,11 +38,11 @@ async function addAuthorOrUrl(msg) {
     await db.addInCollection({
       userID: msg.author.id,
       userName: msg.author.username,
-      urls: [
+      videos: [
         {
           url: msg.attachments.first().url,
           timestamp: msg.createdTimestamp,
-          id: msg.attachments.first().id,
+          id: vidMsgId,
         },
       ],
     });
@@ -51,8 +51,12 @@ async function addAuthorOrUrl(msg) {
 
 async function handleNewVideo(msg) {
   const vidChan = msg.guild.channels.resolve(config.channel.videos);
-  await vidChan.send(msg.attachments.map((d) => d.url).join('\n'));
-  await addAuthorOrUrl(msg);
+  const filename = await downloadVideoFromMessage(msg);
+  console.log(filename);
+  // await pingAPI(filename)
+  const vidMsg = await vidChan.send({ files: [msg.attachments.first().url] });
+  await addAuthorOrUrl(msg, vidMsg.id);
+  await vidMsg.react('✅');
   await msg.delete();
 }
 
@@ -64,22 +68,20 @@ async function handleNewMessageSubmitChan(msg) {
   }
 }
 
-async function handleNewMessageVideoChan(msg) {
-  if (msg.author === client.user) {
-    await downloadVideoFromMessage(msg);
-    await msg.react('✅');
-    // await pingAPI(msg.id)
-  }
-}
+// async function handleNewMessageVideoChan(msg) {
+//   if (msg.author === client.user) {
+//     await msg.react('✅');
+//   }
+// }
 
 client.on('message', async function (msg) {
   let chan = msg.channel;
   if (chan.id === config.channel.submit) {
     await handleNewMessageSubmitChan(msg);
   }
-  if (chan.id === config.channel.videos) {
-    await handleNewMessageVideoChan(msg);
-  }
+  // if (chan.id === config.channel.videos) {
+  //   await handleNewMessageVideoChan(msg);
+  // }
 });
 
 function isVideo(msg) {
@@ -93,16 +95,17 @@ function isVideo(msg) {
 
 async function downloadVideo(url, name, folder = './videos') {
   const streamVideo = await axios.get(url, { responseType: 'stream' });
-  const streamFile = fs.createWriteStream(folder + '/' + name + '.mp4');
+  const filename = folder + '/' + name + '.mp4';
+  const streamFile = fs.createWriteStream(filename);
   const writing = streamVideo.data.pipe(streamFile);
-  return await finished(writing);
+  await finished(writing);
+  console.log('finished');
+  return filename;
 }
 
 async function downloadVideoFromMessage(msg) {
-  return await downloadVideo(
-    msg.content,
-    `${msg.author.id}_${msg.content.split('/')[5]}`
-  );
+  const tmp = msg.attachments.first().url;
+  return await downloadVideo(tmp, `${msg.author.id}_${tmp.split('/')[5]}`);
 }
 
 client
