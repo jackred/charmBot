@@ -117,7 +117,7 @@ class DB {
   updatePushOneUrl(userID, url, timestamp, id, options = {}) {
     return this.updateOneInCollection(
       { userID },
-      { $push: { urls: { url, timestamp, id } } },
+      { $push: { videos: { url, timestamp, id } } },
       options,
       'charm_reading'
     );
