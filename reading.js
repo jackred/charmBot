@@ -26,11 +26,11 @@ client.on('ready', async () => {
   } while (msgs.size > 0);
 });
 
-async function addAuthorOrUrl(msg, vidMsgId) {
+async function addAuthorOrUrl(msg, vidMsg) {
   if ((await db.findUserByDiscordID(msg.author.id)) !== null) {
     await db.updatePushOneUrl(
       msg.author.id,
-      msg.attachments.first().url,
+      vidMsg.attachments.first().url,
       msg.createdTimestamp,
       msg.attachments.first().id
     );
@@ -40,9 +40,9 @@ async function addAuthorOrUrl(msg, vidMsgId) {
       userName: msg.author.username,
       videos: [
         {
-          url: msg.attachments.first().url,
+          url: vidMsg.attachments.first().url,
           timestamp: msg.createdTimestamp,
-          id: vidMsgId,
+          id: msg.attachments.first().id,
         },
       ],
     });
@@ -55,7 +55,7 @@ async function handleNewVideo(msg) {
   console.log(filename);
   // await pingAPI(filename)
   const vidMsg = await vidChan.send({ files: [msg.attachments.first().url] });
-  await addAuthorOrUrl(msg, vidMsg.id);
+  await addAuthorOrUrl(msg, vidMsg);
   await vidMsg.react('✅');
   await msg.delete();
 }

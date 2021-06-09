@@ -22,6 +22,6 @@ const charmsSchema = new mongoose.Schema({
       ],
     },
   ],
-});
+}, {collection: 'charm_reading'});
 
 module.exports = charmsSchema;

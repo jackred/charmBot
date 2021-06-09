@@ -6,6 +6,7 @@ services:
     build: .
     volumes:
       - ./config.json:/usr/src/charmBot/config.json
+      - /home/jackred/Mine_Blue/charm_reader/videos:/usr/src/charmBot/videos
     restart: always
 
 networks:

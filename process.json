@@ -1,7 +1,7 @@
 {
     "apps" : [{
       "name"        : "charmBot",
-      "script"      : "app.js",
+      "script"      : "reading.js",
       "args"        : [],
       "log_date_format" : "YYYY-MM-DD HH:mm Z",
       "watch"       : false,
