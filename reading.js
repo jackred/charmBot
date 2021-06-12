@@ -14,6 +14,26 @@ const client = new Discord.Client({
 
 const finished = util.promisify(stream.finished);
 
+const interval = 10 * 60 * 1000;
+
+async function addReactIfNot(id, chan) {
+  console.log('id', id, chan.name);
+  const msg = await chan.messages.fetch(id);
+  console.log(msg);
+  msg.react('✅');
+}
+
+async function addReactionMessageProcessed() {
+  console.log('react');
+  const vidChan = client.channels.resolve(config.channel.videos);
+  const vids = await db.find_done();
+  vids.forEach((usr) =>
+    usr.videos.forEach((vid) => addReactIfNot(vid.msg_id, vidChan))
+  );
+}
+
+setInterval(addReactionMessageProcessed, interval);
+
 client.on('ready', async () => {
   console.log('Starting!');
   const chan = client.channels.resolve(config.channel.submit);
@@ -32,7 +52,8 @@ async function addAuthorOrUrl(msg, vidMsg) {
       msg.author.id,
       vidMsg.attachments.first().url,
       msg.createdTimestamp,
-      msg.attachments.first().id
+      msg.attachments.first().id,
+      vidMsg.id
     );
   } else {
     await db.addInCollection({
@@ -43,6 +64,7 @@ async function addAuthorOrUrl(msg, vidMsg) {
           url: vidMsg.attachments.first().url,
           timestamp: msg.createdTimestamp,
           id: msg.attachments.first().id,
+          msg_id: vidMsg.id,
         },
       ],
     });
@@ -53,10 +75,9 @@ async function handleNewVideo(msg) {
   const vidChan = msg.guild.channels.resolve(config.channel.videos);
   const filename = await downloadVideoFromMessage(msg);
   console.log(filename);
-  // await pingAPI(filename)
   const vidMsg = await vidChan.send({ files: [msg.attachments.first().url] });
   await addAuthorOrUrl(msg, vidMsg);
-  await vidMsg.react('✅');
+  await vidMsg.react('✔');
   await msg.delete();
 }
 
@@ -75,6 +96,7 @@ async function handleNewMessageSubmitChan(msg) {
 // }
 
 client.on('message', async function (msg) {
+  addReactionMessageProcessed();
   let chan = msg.channel;
   if (chan.id === config.channel.submit) {
     await handleNewMessageSubmitChan(msg);

@@ -10,14 +10,14 @@ class DB {
   }
 
   async initDb() {
-    // this.db = await mongoose.connect('mongodb://172.18.0.2:27017/charms', {
-    //   useNewUrlParser: true,
-    //   useUnifiedTopology: true,
-    // });
-    this.db = await mongoose.connect(config.mongo, {
-	useNewUrlParser: true,
-	useUnifiedTopology: true,
+    this.db = await mongoose.connect('mongodb://172.18.0.2:27017/charms', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
+    //this.db = await mongoose.connect(config.mongo, {
+    //  useNewUrlParser: true,
+    //  useUnifiedTopology: true,
+    //});
     this.db.model('charm_reading', charmsSchema);
   }
 
@@ -114,10 +114,10 @@ class DB {
       });
   }
 
-  updatePushOneUrl(userID, url, timestamp, id, options = {}) {
+  updatePushOneUrl(userID, url, timestamp, id, msg_id, options = {}) {
     return this.updateOneInCollection(
       { userID },
-      { $push: { videos: { url, timestamp, id } } },
+      { $push: { videos: { url, timestamp, id, msg_id } } },
       options,
       'charm_reading'
     );
@@ -125,6 +125,13 @@ class DB {
 
   findUserByDiscordID(userID) {
     return this.findOneInCollection({ userID }, {}, 'charm_reading');
+  }
+
+  find_done() {
+    return this.findInCollection(
+      { 'videos.done': true },
+      { 'videos.msg_id': 1 }
+    );
   }
 }
 
