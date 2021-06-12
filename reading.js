@@ -89,21 +89,11 @@ async function handleNewMessageSubmitChan(msg) {
   }
 }
 
-// async function handleNewMessageVideoChan(msg) {
-//   if (msg.author === client.user) {
-//     await msg.react('✅');
-//   }
-// }
-
 client.on('message', async function (msg) {
-  addReactionMessageProcessed();
   let chan = msg.channel;
   if (chan.id === config.channel.submit) {
     await handleNewMessageSubmitChan(msg);
   }
-  // if (chan.id === config.channel.videos) {
-  //   await handleNewMessageVideoChan(msg);
-  // }
 });
 
 function isVideo(msg) {
