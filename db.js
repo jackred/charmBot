@@ -10,14 +10,14 @@ class DB {
   }
 
   async initDb() {
-    this.db = await mongoose.connect('mongodb://172.18.0.2:27017/charms', {
+    // this.db = await mongoose.connect('mongodb://172.18.0.2:27017/charms', {
+    //   useNewUrlParser: true,
+    //   useUnifiedTopology: true,
+    // })
+    this.db = await mongoose.connect(config.mongo, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    //this.db = await mongoose.connect(config.mongo, {
-    //  useNewUrlParser: true,
-    //  useUnifiedTopology: true,
-    //});
     this.db.model('charm_reading', charmsSchema);
   }
 
